@@ -1,0 +1,40 @@
+services:
+  dd-minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000" # API
+      - "9001:9001"
+    volumes:
+      - dd_minio_data:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+
+  dd-minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - dd-minio
+    entrypoint: >
+      /bin/sh -c "
+        sleep 5
+        mc alias set myminio http://dd-minio:9000 minioadmin minioadmin
+        mc mb myminio/drones || echo "Bucket 'drones' already exists"
+        mc policy set public myminio/drones
+        echo "Bucket 'drones' created and made public"
+      "
+  
+  dd-mongodb:
+    image: mongo:latest  # Используем официальный образ MongoDB
+    ports:
+      - "27017:27017"  # Открываем порт MongoDB на хосте
+    volumes:
+      - dd_mongo_data:/data/db  # Храним данные MongoDB в томе для сохранности
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin  # Имя пользователя администратора
+      MONGO_INITDB_ROOT_PASSWORD: mongoadmin  # Пароль администратора
+    restart: always  # Перезапускаем контейнер в случае его остановки
+
+volumes:
+  dd_mongo_data:
+  dd_minio_data:
