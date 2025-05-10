@@ -80,7 +80,7 @@ class VideoAnalyzer:
         if len(self._drone_model_statistics) == 0:
             return None
 
-        model_stats = defaultdict(int)
+        model_stats = defaultdict(float)
 
         for _, model_list in self._drone_model_statistics.items():
             for model in model_list:
@@ -97,6 +97,21 @@ class VideoAnalyzer:
         assert max_count_model, max_count_model
 
         return max_count_model, max_count, (max_count / self.total_frames) * 100
+
+    def get_average_confidence_in_model(self, model: str) -> float:
+        average_confidence: float = 0.0
+        count_models = 0
+        for _, model_list in self._drone_model_statistics.items():
+            for model_ in model_list:
+                model_name = model_.model_id
+                if model_name == model:
+                    average_confidence += 1
+                    count_models +=1
+
+        if count_models == 0:
+            return 0
+        
+        return average_confidence / count_models
 
     def get_type_percent(self) -> tuple[str, int, int] | None:
         if len(self._drone_detection_statistics) == 0:

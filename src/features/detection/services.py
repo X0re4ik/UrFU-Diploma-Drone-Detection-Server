@@ -9,6 +9,10 @@ from ultralytics import YOLO
 
 from src.entity.drone_box import DroneBoxDTO
 
+
+
+CLASSES = ["БПЛА", "Квадракоптер", "Птица", "Самолет"]
+
 class IDroneDetection(ABC):
 
     def get_drone_bbox(self, frame: FrameType) -> list[DroneBoxDTO]:
@@ -29,10 +33,10 @@ class YOLOv8DroneDetection(IDroneDetection):
             results.boxes.xyxy, results.boxes.conf, results.boxes.cls
         ):
             xmin, ymin, xmax, ymax = map(int, box[:4].tolist())
-            if conf < self._conf:
-                continue
+            # if conf < self._conf:
+            #     continue
 
             detections_results.append(
-                DroneBoxDTO([xmin, ymin, xmax, ymax], conf.item(), "Aircraft-Type-UAV")
+                DroneBoxDTO([xmin, ymin, xmax, ymax], conf.item(), CLASSES[int(cls.item())])
             )
         return detections_results

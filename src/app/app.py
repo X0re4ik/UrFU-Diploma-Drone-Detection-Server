@@ -1,5 +1,4 @@
-import time
-from typing import Any
+import logging
 import cv2
 
 from src.features.analyzer.services import VideoAnalyzer, save_plot_to_bytes
@@ -16,14 +15,22 @@ from src.features.download_video.services import get_download_video
 from src.features.load_report.services import LoadReport, get_report
 from src.features.load_video import ILoadVideo
 
-
-from src.shared.typing import FrameType
-
-
-import logging
-
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ModelInfo:
+    model: str
+    average_confidence: float
+
+
+@dataclass
+class DroneDetectionPipelineResult:
+    report_url: str
+    detection_video_url: str
+    model_info: ModelInfo | None
 
 
 class DroneDetectionPipeline:
@@ -35,7 +42,7 @@ class DroneDetectionPipeline:
         load_video: ILoadVideo,
         statistics: VideoAnalyzer,
         *,
-        cv2_show: bool = True,
+        cv2_show: bool = False,
     ):
         self._drone_detection = drone_detection
         self._drone_classification = drone_classification
@@ -46,13 +53,13 @@ class DroneDetectionPipeline:
         self._cv2_show = cv2_show
 
     def detect(self, unique_id: str):
-        
+
         logger.info(f"Получил объект на обработку: {unique_id}")
 
-        #path_to_file: str = self._load_video.download(unique_id)
+        path_to_file: str = self._load_video.download(unique_id)
 
-        cap = cv2.VideoCapture("/home/anton/X0re4ik/UrFU/app/server/drone-detection-server/dev/examples/5.mp4")
-        
+        cap = cv2.VideoCapture(path_to_file)
+
         if not cap.isOpened():
             raise Exception()
 
@@ -88,7 +95,7 @@ class DroneDetectionPipeline:
                     f"Detect: {[xmin, ymin, xmax, ymax]} | {magic_box.model_id}"
                 )
 
-                if magic_box.model_id == "Aircraft-Type-UAV":
+                if magic_box.model_id == "БПЛА":
                     cropped = frame[ymin:ymax, xmin:xmax]
                     if cropped.size == 0:
                         continue
@@ -97,13 +104,14 @@ class DroneDetectionPipeline:
 
                     cv2.putText(
                         frame,
-                        drone_type_info.model_id,
+                        f"{drone_type_info.model_id} | {drone_type_info.confidence:.2f}",
                         (xmin, ymax + 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
+                        cv2.FONT_HERSHEY_COMPLEX,
                         0.3,
                         (255, 0, 0),
                         1,
                     )
+
                     drone_model_statistics = DroneModelStatisticsDTO(
                         drone_type_info.confidence, drone_type_info.model_id
                     )
@@ -111,21 +119,20 @@ class DroneDetectionPipeline:
                         frame_id, drone_model_statistics
                     )
 
-                if magic_box.model_id == "Quadcopter-Type-UAV":
-                    pass
+                if magic_box.model_id in ["БПЛА", "Квадракоптер"]:
+                    self._statistics.update_drone_detection(
+                        frame_id,
+                        DroneDetectionStatisticsDTO(
+                            magic_box.confidence, magic_box.model_id
+                        ),
+                    )
 
-                self._statistics.update_drone_detection(
-                    frame_id,
-                    DroneDetectionStatisticsDTO(
-                        magic_box.confidence, magic_box.model_id
-                    ),
-                )
                 cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (0, 0, 255), 2)
                 cv2.putText(
                     frame,
-                    magic_box.model_id,
+                    f"{magic_box.model_id} | {magic_box.confidence:.2f}",
                     (xmin, ymin - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
+                    cv2.FONT_HERSHEY_COMPLEX,
                     0.3,
                     (0, 0, 255),
                     1,
@@ -144,16 +151,26 @@ class DroneDetectionPipeline:
 
         cv2.destroyAllWindows()
 
-        report_folder = get_report().save_report(self._statistics.report(), f"{unique_id}.png")
+        report_folder = get_report().save_report(
+            self._statistics.report(), f"{unique_id}.png"
+        )
 
-        detection_video_folder = get_download_video().download(f"/tmp/drones/processed/{unique_id}.mp4")
+        detection_video_folder = get_download_video().download(
+            f"/tmp/drones/processed/{unique_id}.mp4"
+        )
 
-        return {
-            "model_percent": self._statistics.get_model_percent(),
-            "type_percent": self._statistics.get_type_percent(),
-            "report": report_folder,
-            "detection_video": detection_video_folder,
-        }
+        model_percent = self._statistics.get_model_percent()
+
+        return DroneDetectionPipelineResult(
+            report_folder,
+            detection_video_folder,
+            ModelInfo(
+                model_percent[0],
+                self._statistics.get_average_confidence_in_model(model_percent[0]),
+            )
+            if model_percent is not None
+            else None
+        )
 
     def get_statisticts(self):
         return self._statistics

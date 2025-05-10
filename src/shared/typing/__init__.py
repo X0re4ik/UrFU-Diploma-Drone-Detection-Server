@@ -4,5 +4,5 @@ from typing import Literal, Callable, Union
 
 
 FrameType = cv2.typing.MatLike
-DroneClassIDType = Literal["Quadcopter-Type-UAV", "Aircraft-Type-UAV"]
+DroneClassIDType = Literal["БПЛА", "Квадракоптер", "Птица", "Самолет"]
 DroneModelIDType = Literal["A22 Foxbat", "Bayraktar TB2", "UJ-22 Airborne", "Unknown"]

@@ -9,6 +9,8 @@ from aiogram.filters import CommandStart
 import asyncio
 
 
+
+
 from src.features.update_user_location.services import get_update_user_location
 from src.shared.libs.s3 import S3Adapter
 from src.shared.configs import settings
@@ -26,14 +28,14 @@ def _s3_create_adapter():
     ).initialize()
 
 
-TOKEN1 = "7110892014:AAFPEvzIiD5PG_pt_sFG7x6dNwbdkchZynU"
-TOKEN2 = "7869796693:AAHsQnHgDHNuX-gCjF0a22XDxTB0vhshfu8"
-TARGET_CHAT_ID = "511246625"
+USER_TOKEN = settings.telegram_bot.user_token
+SERVICE_TOKEN = settings.telegram_bot.service_token
+TARGET_CHAT_ID = settings.telegram_bot.service_chat_id
 
-bot1 = Bot(token=TOKEN1)
+user_bot = Bot(token=USER_TOKEN)
 dp = Dispatcher()
 
-bot2 = Bot(token=TOKEN2)
+service_bot = Bot(token=SERVICE_TOKEN)
 
 from src.app.init import pipeline
 
@@ -78,8 +80,8 @@ async def detection_drone(message: Message):
     if time_to_update:
         return await _cmd_start(message)
 
-    video_file = await bot1.get_file(message.video.file_id)
-    video_bytes = await bot1.download_file(video_file.file_path)
+    video_file = await user_bot.get_file(message.video.file_id)
+    video_bytes = await user_bot.download_file(video_file.file_path)
     
     
     latitude, longitude = get_update_user_location().get_location(message.from_user.id)
@@ -90,40 +92,49 @@ async def detection_drone(message: Message):
     _s3_create_adapter().upload_file("drones", f"rows/{file_name}", video_bytes)
     result = pipeline.detect(id)
     video_name, video_bytes = _s3_create_adapter().download_file_bytes(
-        "drones", result["detection_video"]
+        "drones", result.detection_video_url
     )
 
-    message = await bot2.send_message(
+    message = await service_bot.send_message(
         chat_id=TARGET_CHAT_ID,
-        text="❗ВНИМАНИЕ❗\nГраждание сообщают об атаке БПЛА"
+        text="❗ВНИМАНИЕ❗\nГраждане сообщают об атаке БПЛА"
     )
     
-    await bot2.send_location(
+    await service_bot.send_location(
         chat_id=TARGET_CHAT_ID,
         latitude=latitude,
         longitude=longitude,
         reply_to_message_id=message.message_id,
     )
 
-    await bot2.send_video(
+    await service_bot.send_video(
         chat_id=TARGET_CHAT_ID,
         video=types.BufferedInputFile(file=video_bytes, filename=video_name),
         caption="Обработанное видео 📹: ",
         reply_to_message_id=message.message_id,
     )
+
     report_name, report_bytes = _s3_create_adapter().download_file_bytes(
-        "drones", result["report"]
+        "drones", result.report_url
     )
-    await bot2.send_photo(
+
+    await service_bot.send_photo(
         chat_id=TARGET_CHAT_ID,
         photo=types.BufferedInputFile(report_bytes, filename=report_name),
         caption="Статистика 📊: ",
         reply_to_message_id=message.message_id,
     )
 
+    if result.model_info:
+        await service_bot.send_message(
+            chat_id=TARGET_CHAT_ID, 
+            text=f"Модель БПЛА: {result.model_info.model} / {(result.model_info.average_confidence * 100):.0f}%",
+            reply_to_message_id=message.message_id,
+        )
+
 async def main():
     print("Бот 1 запущен...")
-    await dp.start_polling(bot1)
+    await dp.start_polling(user_bot)
 
 
 if __name__ == "__main__":

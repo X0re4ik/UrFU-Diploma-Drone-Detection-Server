@@ -19,7 +19,7 @@ from .app import DroneDetectionPipeline
 from src.features.analyzer import VideoAnalyzer
 
 
-YOLO_NAME = "best.pt"
+YOLO_NAME = "09-04-2025-best.pt"
 MOBILE_NET_NAME = "resnet18_bpla-21-04-2025-13_45.pth"
 
 current_dir = os.path.dirname(__file__)
