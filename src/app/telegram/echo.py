@@ -8,12 +8,14 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 import asyncio
 
-
+from aiogram.enums.parse_mode import ParseMode
 
 
 from src.features.update_user_location.services import get_update_user_location
 from src.shared.libs.s3 import S3Adapter
 from src.shared.configs import settings
+
+from src.shared.api.yandex.map import YandexMapClient, YandexMapResult
 
 import uuid
 
@@ -43,6 +45,17 @@ from aiogram.filters import Command
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram import F
+
+
+def _to_message(yandex_map_results: list[YandexMapResult]) -> str:
+    message = "Список потенциальных целей:"
+    
+    yandex_map_results = sorted(yandex_map_results, key=lambda yandex_map_result: yandex_map_result.distance.value)
+    
+    for i, yandex_map_result in enumerate(yandex_map_results, start=1):
+        distanse = yandex_map_result.distance.text
+        message += f"\n{i}) <b>{distanse}</b>: {yandex_map_result.title}"
+    return message
 
 
 async def _cmd_start(message: Message):
@@ -131,6 +144,21 @@ async def detection_drone(message: Message):
             text=f"Модель БПЛА: {result.model_info.model} / {(result.model_info.average_confidence * 100):.0f}%",
             reply_to_message_id=message.message_id,
         )
+    client = YandexMapClient(api_key="de0a0eed-8f3e-4a79-89e5-9e47b7d2b164")
+    results = await client.set_ll(
+        longitude,
+        latitude,
+    ).set_results(5).set_attrs().send("Производственное предприятие")
+
+    if len(results) > 0:
+        await service_bot.send_message(
+            chat_id=TARGET_CHAT_ID, 
+            text=_to_message(results),
+            reply_to_message_id=message.message_id,
+            parse_mode=ParseMode.HTML
+        )
+    
+    
 
 async def main():
     print("Бот 1 запущен...")
