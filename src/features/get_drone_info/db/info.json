@@ -1,0 +1,26 @@
+[
+    {
+        "modelName": "Bayraktar TB2",
+        "maximumPayload": 19,
+        "maximumSpeed": 140,
+        "cruisingSpeed": 100,
+        "communicationRange": 200,
+        "photo": "Bayraktar TB2.png"
+    },
+    {
+        "modelName": "A22 Foxbat",
+        "maximumPayload": 300,
+        "maximumSpeed": 220,
+        "cruisingSpeed": 130,
+        "communicationRange": 580,
+        "photo": "A22 Foxbat.png"
+    },
+    {
+        "modelName": "UJ-22 Airborne",
+        "maximumPayload": 300,
+        "maximumSpeed": 220,
+        "cruisingSpeed": 130,
+        "communicationRange": 580,
+        "photo": "UJ-22 Airborne.png"
+    }
+]

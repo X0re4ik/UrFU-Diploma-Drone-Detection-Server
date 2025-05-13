@@ -10,7 +10,10 @@ import torch.nn.functional as F
 import os
 
 
-from src.features.detection import DroneDetectionFactory
+from src.features.detection import (
+    DroneDetectionFactory,
+    DroneDetectionWithTrackerFactory,
+)
 from src.features.classification import IDroneClassification, DroneClassificationFactory
 from src.features.load_video import LoadVideoFactory
 
@@ -19,15 +22,17 @@ from .app import DroneDetectionPipeline
 from src.features.analyzer import VideoAnalyzer
 
 
-YOLO_NAME = "09-04-2025-best.pt"
-MOBILE_NET_NAME = "resnet18_bpla-21-04-2025-13_45.pth"
+YOLO_NAME = "10_05_25_best.pt"
+TRACKER_NAME = "bytetrack.yaml"
+MOBILE_NET_NAME = "resnet18_bpla-21-04-2025.pth"
 
 current_dir = os.path.dirname(__file__)
 
 yolo_path = os.path.join(current_dir, "models", "yolo", YOLO_NAME)
 mobile_net_path = os.path.join(current_dir, "models", "mobilenet", MOBILE_NET_NAME)
+tracker_path = os.path.join(current_dir, "models", "tracker", TRACKER_NAME)
 
-for file in [yolo_path, mobile_net_path]:
+for file in [yolo_path, mobile_net_path, tracker_path]:
     if not os.path.exists(file):
         raise FileNotFoundError(file)
 
@@ -37,7 +42,7 @@ MOBILENET_MODEL = torch.load(mobile_net_path, map_location=torch.device("cpu"))
 MOBILENET_MODEL.eval()
 
 
-drone_detection = DroneDetectionFactory.create(YOLO_MODEL)
+drone_detection = DroneDetectionWithTrackerFactory.create(YOLO_MODEL, tracker_path)
 drone_classification_detection = DroneClassificationFactory.create(MOBILENET_MODEL)
 
 video_analyzer = VideoAnalyzer()
@@ -51,11 +56,7 @@ pipeline = DroneDetectionPipeline(
 
 import os
 
-paths = [
-    "/tmp/drones/rows/",
-    "/tmp/drones/reports/",
-    "/tmp/drones/processed/"
-]
+paths = ["/tmp/drones/rows/", "/tmp/drones/reports/", "/tmp/drones/processed/"]
 
 for path in paths:
     os.makedirs(path, exist_ok=True)

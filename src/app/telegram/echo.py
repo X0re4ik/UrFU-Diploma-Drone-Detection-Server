@@ -32,7 +32,7 @@ def _s3_create_adapter():
 
 USER_TOKEN = settings.telegram_bot.user_token
 SERVICE_TOKEN = settings.telegram_bot.service_token
-TARGET_CHAT_ID = settings.telegram_bot.service_chat_id
+TARGET_CHAT_ID = -4764676516  # settings.telegram_bot.service_chat_id
 
 user_bot = Bot(token=USER_TOKEN)
 dp = Dispatcher()
@@ -46,16 +46,36 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram import F
 
+from src.features.get_drone_info import get_frone_info, DroneInfoDTO
 
-def _to_message(yandex_map_results: list[YandexMapResult]) -> str:
+
+def _to_message(
+    yandex_map_results: list[YandexMapResult],
+    cruising_speed: float | None,
+) -> str:
     message = "Список потенциальных целей:"
-    
-    yandex_map_results = sorted(yandex_map_results, key=lambda yandex_map_result: yandex_map_result.distance.value)
-    
+
+    yandex_map_results = sorted(
+        yandex_map_results,
+        key=lambda yandex_map_result: yandex_map_result.distance.value,
+    )
+
     for i, yandex_map_result in enumerate(yandex_map_results, start=1):
-        distanse = yandex_map_result.distance.text
-        message += f"\n{i}) <b>{distanse}</b>: {yandex_map_result.title}"
+        distanse_str = yandex_map_result.distance.text
+        distanse_value = yandex_map_result.distance.value
+        minute = ((distanse_value / 1000) / cruising_speed) * 60
+        message += f"\n{i}) <b>{distanse_str} ({minute:.2f} мин.)</b>: {yandex_map_result.title}"
     return message
+
+
+def __to_message(drone_info: DroneInfoDTO, count: int) -> str:
+    return f"""
+Атака ведется моделью: <b>{drone_info.model_name}</b> ({count} шт.)
+1) Полезная нагрузка: {drone_info.maximum_payload} кг.
+2) Максимальная скорость: {drone_info.maximum_speed} км/ч
+3) Средняя скорость: {drone_info.cruising_speed} км/ч
+4) Дальность связи: {drone_info.communication_range} км.
+"""
 
 
 async def _cmd_start(message: Message):
@@ -67,6 +87,7 @@ async def _cmd_start(message: Message):
         "💌 Нажми кнопку, чтобы отправить геопозицию", reply_markup=keyboard
     )
 
+
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
     return await _cmd_start(message)
@@ -75,13 +96,9 @@ async def cmd_start(message: Message):
 @dp.message(lambda msg: msg.location is not None)
 async def relay_message(message: Message):
     get_update_user_location().update_location(
-        message.from_user.id,
-        message.location.latitude,
-        message.location.longitude
+        message.from_user.id, message.location.latitude, message.location.longitude
     )
-    return await message.answer(
-        "📍 Координаты успешно обновлены"
-    )
+    return await message.answer("📍 Координаты успешно обновлены")
 
 
 @dp.message(lambda msg: msg.video is not None)
@@ -89,16 +106,15 @@ async def detection_drone(message: Message):
     time_to_update = get_update_user_location().time_to_update_location(
         message.from_user.id,
     )
-    
+
     if time_to_update:
         return await _cmd_start(message)
 
     video_file = await user_bot.get_file(message.video.file_id)
     video_bytes = await user_bot.download_file(video_file.file_path)
-    
-    
+
     latitude, longitude = get_update_user_location().get_location(message.from_user.id)
-        
+
     id = str(uuid.uuid4())
     file_name = id + ".mp4"
 
@@ -109,10 +125,9 @@ async def detection_drone(message: Message):
     )
 
     message = await service_bot.send_message(
-        chat_id=TARGET_CHAT_ID,
-        text="❗ВНИМАНИЕ❗\nГраждане сообщают об атаке БПЛА"
+        chat_id=TARGET_CHAT_ID, text="❗ВНИМАНИЕ❗\nГраждане сообщают об атаке БПЛА"
     )
-    
+
     await service_bot.send_location(
         chat_id=TARGET_CHAT_ID,
         latitude=latitude,
@@ -138,27 +153,44 @@ async def detection_drone(message: Message):
         reply_to_message_id=message.message_id,
     )
 
-    if result.model_info:
-        await service_bot.send_message(
-            chat_id=TARGET_CHAT_ID, 
-            text=f"Модель БПЛА: {result.model_info.model} / {(result.model_info.average_confidence * 100):.0f}%",
-            reply_to_message_id=message.message_id,
+    if result.model_info is None:
+        return await service_bot.send_message(
+            chat_id=TARGET_CHAT_ID, text="Тип дрона не удалось установить"
         )
-    client = YandexMapClient(api_key="de0a0eed-8f3e-4a79-89e5-9e47b7d2b164")
-    results = await client.set_ll(
-        longitude,
-        latitude,
-    ).set_results(5).set_attrs().send("Производственное предприятие")
 
-    if len(results) > 0:
-        await service_bot.send_message(
-            chat_id=TARGET_CHAT_ID, 
-            text=_to_message(results),
-            reply_to_message_id=message.message_id,
-            parse_mode=ParseMode.HTML
-        )
-    
-    
+    drone_info = get_frone_info.get_frone_info(result.model_info.model)
+
+    await service_bot.send_photo(
+        chat_id=TARGET_CHAT_ID,
+        photo=types.BufferedInputFile(
+            drone_info.photo, filename=f"{result.model_info.model}.png"
+        ),
+        caption=__to_message(drone_info, result.model_info.count),
+        reply_to_message_id=message.message_id,
+        parse_mode=ParseMode.HTML,
+    )
+
+    # client = YandexMapClient(api_key="de0a0eed-8f3e-4a79-89e5-9e47b7d2b164")
+    # results = (
+    #     await client.set_ll(
+    #         longitude,
+    #         latitude,
+    #     )
+    #     .set_attrs()
+    #     .send("Производственное предприятие")
+    # )
+
+    # if len(results) > 0:
+    #     await service_bot.send_message(
+    #         chat_id=TARGET_CHAT_ID,
+    #         text=_to_message(
+    #             results,
+    #             drone_info.cruising_speed,
+    #         ),
+    #         reply_to_message_id=message.message_id,
+    #         parse_mode=ParseMode.HTML,
+    #     )
+
 
 async def main():
     print("Бот 1 запущен...")

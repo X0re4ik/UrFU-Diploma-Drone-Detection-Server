@@ -1,0 +1,11 @@
+tracker_type: bytetrack # tracker type, ['botsort', 'bytetrack']
+track_high_thresh: 0.4
+track_low_thresh: 0.4
+new_track_thresh: 0.4
+track_buffer: 100
+with_reid: False
+gmc_method: 'sparseOptFlow'
+proximity_thresh: 0.5
+appearance_thresh: 0.5
+match_thresh: 0.8
+fuse_score: True

@@ -1,2 +1,2 @@
 from .services import IDroneDetection
-from .di import DroneDetectionFactory
+from .di import DroneDetectionFactory, DroneDetectionWithTrackerFactory

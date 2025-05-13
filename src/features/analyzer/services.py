@@ -87,6 +87,9 @@ class VideoAnalyzer:
                 model_name = model.model_id
                 model_stats[model_name] += 1
 
+        if len(model_stats) == 0:
+            return None
+
         max_count = 0
         max_count_model = None
         for model, count in model_stats.items():
@@ -94,9 +97,17 @@ class VideoAnalyzer:
                 max_count_model = model
                 max_count = count
 
-        assert max_count_model, max_count_model
-
         return max_count_model, max_count, (max_count / self.total_frames) * 100
+
+    def get_model(self) -> str | None:
+        data = self.get_model_percent()
+        return data[0] if data else None
+
+    def get_count_drones(self) -> int:
+        _count_drones = 0
+        for _, drones in self._drone_detection_statistics.items():
+            _count_drones = max(_count_drones, len(drones))
+        return _count_drones
 
     def get_average_confidence_in_model(self, model: str) -> float:
         average_confidence: float = 0.0
@@ -106,11 +117,11 @@ class VideoAnalyzer:
                 model_name = model_.model_id
                 if model_name == model:
                     average_confidence += 1
-                    count_models +=1
+                    count_models += 1
 
         if count_models == 0:
             return 0
-        
+
         return average_confidence / count_models
 
     def get_type_percent(self) -> tuple[str, int, int] | None:
@@ -197,16 +208,16 @@ class VideoAnalyzer:
 
     def report(self) -> plt.Figure:
 
-        fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10))
         frames_lines = self.get_frames_lines()
         drone_confidences_lines = self.drone_confidences_lines()
         model_confidences_lines = self.model_confidences_lines()
-        total_count_lines = self.total_count_lines()
+        # total_count_lines = self.total_count_lines()
 
-        models_with_type = self.get_models_with_type()
+        # models_with_type = self.get_models_with_type()
 
         draw_bar(
-            axs[0, 0],
+            axs[0],
             frames_lines,
             drone_confidences_lines,
             "skyblue",
@@ -217,7 +228,7 @@ class VideoAnalyzer:
         )
 
         draw_bar(
-            axs[0, 1],
+            axs[1],
             frames_lines,
             model_confidences_lines,
             ["red"],
@@ -227,26 +238,26 @@ class VideoAnalyzer:
             [],
         )
 
-        draw_bar(
-            axs[1, 0],
-            [model for (model, _) in models_with_type],
-            [count for (_, count) in models_with_type],
-            "lightgreen",
-            "Количество дронов",
-            "Номер кадра",
-            "Количество",
-            [],
-        )
+        # draw_bar(
+        #     axs[1, 0],
+        #     [model for (model, _) in models_with_type],
+        #     [count for (_, count) in models_with_type],
+        #     "lightgreen",
+        #     "Количество дронов",
+        #     "Номер кадра",
+        #     "Количество",
+        #     [],
+        # )
 
-        draw_bar(
-            axs[1, 1],
-            frames_lines,
-            total_count_lines,
-            "lightgreen",
-            "Количество дронов",
-            "Номер кадра",
-            "Количество",
-            [],
-        )
+        # draw_bar(
+        #     axs[1, 1],
+        #     frames_lines,
+        #     total_count_lines,
+        #     "lightgreen",
+        #     "Количество дронов",
+        #     "Номер кадра",
+        #     "Количество",
+        #     [],
+        # )
 
         return fig

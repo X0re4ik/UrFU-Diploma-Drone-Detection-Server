@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ModelInfo:
     model: str
-    average_confidence: float
+    count: int
 
 
 @dataclass
@@ -101,7 +101,6 @@ class DroneDetectionPipeline:
                         continue
 
                     drone_type_info = self._drone_classification.get_class(cropped)
-
                     cv2.putText(
                         frame,
                         f"{drone_type_info.model_id} | {drone_type_info.confidence:.2f}",
@@ -159,17 +158,15 @@ class DroneDetectionPipeline:
             f"/tmp/drones/processed/{unique_id}.mp4"
         )
 
-        model_percent = self._statistics.get_model_percent()
+        model: str | None = self._statistics.get_model()
+        count_drones: int = self._statistics.get_count_drones()
+
+        print(f"Финальная модель: {model}")
 
         return DroneDetectionPipelineResult(
             report_folder,
             detection_video_folder,
-            ModelInfo(
-                model_percent[0],
-                self._statistics.get_average_confidence_in_model(model_percent[0]),
-            )
-            if model_percent is not None
-            else None
+            ModelInfo(model, count_drones) if model else None,
         )
 
     def get_statisticts(self):

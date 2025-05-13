@@ -58,13 +58,11 @@ class YandexMapClient:
                     for item in results if "distance" in item
                 ]
 
-# # Пример использования
-# async def main():
-#     client = YandexMapClient(api_key="de0a0eed-8f3e-4a79-89e5-9e47b7d2b164")
-#     results = await client.set_ll(60.591628, 56.805428).set_attrs().send("Производственное предприятие")
-#     for result in results:
-#         print(result)
+# Пример использованияw
+async def main():
+    client = YandexMapClient(api_key="de0a0eed-8f3e-4a79-89e5-9e47b7d2b164")
+    results = await client.set_ll(60.591628, 56.805428).set_attrs().send("Производственное предприятие")
 
-# # Запуск
-# if __name__ == "__main__":
-#     asyncio.run(main())
+# Запуск
+if __name__ == "__main__":
+    asyncio.run(main())

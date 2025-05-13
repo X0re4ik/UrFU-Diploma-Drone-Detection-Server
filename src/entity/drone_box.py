@@ -1,7 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.shared.typing import DroneClassIDType
-
 
 
 @dataclass
@@ -9,6 +8,7 @@ class DroneBoxDTO:
     bbox: list[int]
     confidence: float
     model_id: DroneClassIDType
+    traick_id: int | None = field(default=-1)
 
     def __post_init__(self):
         if len(self.bbox) != 4:
@@ -20,9 +20,3 @@ class DroneBoxDTO:
             raise ValueError(
                 f"Уверенность не может должна быть 0 < confidence ({self.confidence}) < 1"
             )
-
-
-from dataclasses import dataclass
-
-from typing import Literal
-
