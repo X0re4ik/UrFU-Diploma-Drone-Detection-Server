@@ -170,26 +170,26 @@ async def detection_drone(message: Message):
         parse_mode=ParseMode.HTML,
     )
 
-    # client = YandexMapClient(api_key="de0a0eed-8f3e-4a79-89e5-9e47b7d2b164")
-    # results = (
-    #     await client.set_ll(
-    #         longitude,
-    #         latitude,
-    #     )
-    #     .set_attrs()
-    #     .send("Производственное предприятие")
-    # )
+    client = YandexMapClient(api_key="de0a0eed-8f3e-4a79-89e5-9e47b7d2b164")
+    results = (
+        await client.set_ll(
+            longitude,
+            latitude,
+        )
+        .set_attrs()
+        .send("Производственное предприятие")
+    )
 
-    # if len(results) > 0:
-    #     await service_bot.send_message(
-    #         chat_id=TARGET_CHAT_ID,
-    #         text=_to_message(
-    #             results,
-    #             drone_info.cruising_speed,
-    #         ),
-    #         reply_to_message_id=message.message_id,
-    #         parse_mode=ParseMode.HTML,
-    #     )
+    if len(results) > 0:
+        await service_bot.send_message(
+            chat_id=TARGET_CHAT_ID,
+            text=_to_message(
+                results,
+                drone_info.cruising_speed,
+            ),
+            reply_to_message_id=message.message_id,
+            parse_mode=ParseMode.HTML,
+        )
 
 
 async def main():
