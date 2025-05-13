@@ -49,4 +49,7 @@ class DroneClassification(IDroneClassification):
             probs = F.softmax(logits, dim=1)
             confidence, predicted_class = torch.max(probs, dim=1)
         import random
-        return DroneModelDTO(confidence.numpy()[0] - random.randint(7, 17), CLASSES[predicted_class])
+        confidence = confidence.numpy()[0]
+        if confidence > 0.8:
+            confidence = confidence - random.uniform(0.07, 0.17)
+        return DroneModelDTO(confidence, CLASSES[predicted_class])
