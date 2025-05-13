@@ -24,7 +24,7 @@ from src.features.analyzer import VideoAnalyzer
 
 YOLO_NAME = "10_05_25_best.pt"
 TRACKER_NAME = "bytetrack.yaml"
-MOBILE_NET_NAME = "resnet18_bpla-21-04-2025.pth"
+MOBILE_NET_NAME = "resnet18_bpla-21-04-2025-13_45.pth"
 
 current_dir = os.path.dirname(__file__)
 
