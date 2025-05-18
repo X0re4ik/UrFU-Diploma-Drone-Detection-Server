@@ -11,7 +11,6 @@ class YandexMapDistance:
 @dataclass
 class YandexMapResult:
     title: str
-    subtitle: str
     distance: YandexMapDistance
 
 class YandexMapClient:
@@ -49,7 +48,6 @@ class YandexMapClient:
                 return [
                     YandexMapResult(
                         title=item["title"]["text"],
-                        subtitle=item["subtitle"]["text"],
                         distance=YandexMapDistance(
                             value=item["distance"]["value"],
                             text=item["distance"]["text"]

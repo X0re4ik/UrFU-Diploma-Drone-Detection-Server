@@ -16,7 +16,6 @@ CLASSES = [
     "A22 Foxbat",
     "Bayraktar TB2",
     "UJ-22 Airborne",
-    "Unknown",
 ]
 
 
@@ -48,8 +47,5 @@ class DroneClassification(IDroneClassification):
             logits = self._model(input_tensor)
             probs = F.softmax(logits, dim=1)
             confidence, predicted_class = torch.max(probs, dim=1)
-        import random
-        confidence = confidence.numpy()[0]
-        if confidence > 0.8:
-            confidence = confidence - random.uniform(0.07, 0.17)
+        confidence = float(confidence.numpy()[0])
         return DroneModelDTO(confidence, CLASSES[predicted_class])

@@ -70,7 +70,7 @@ def _to_message(
 
 def __to_message(drone_info: DroneInfoDTO, count: int) -> str:
     return f"""
-Атака ведется моделью: <b>{drone_info.model_name}</b> ({count} шт.)
+Атака ведется моделью: <b>{drone_info.model_name}</b> (1 шт.)
 1) Полезная нагрузка: {drone_info.maximum_payload} кг.
 2) Максимальная скорость: {drone_info.maximum_speed} км/ч
 3) Средняя скорость: {drone_info.cruising_speed} км/ч

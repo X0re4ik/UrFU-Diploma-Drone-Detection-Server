@@ -22,9 +22,9 @@ from .app import DroneDetectionPipeline
 from src.features.analyzer import VideoAnalyzer
 
 
-YOLO_NAME = "10_05_25_best.pt"
+YOLO_NAME = "10-05_22_16_best.pt"
 TRACKER_NAME = "bytetrack.yaml"
-MOBILE_NET_NAME = "resnet18_bpla-21-04-2025-13_45.pth"
+MOBILE_NET_NAME = "17-05-25-resnet18_bpla_1.pth"
 
 current_dir = os.path.dirname(__file__)
 
