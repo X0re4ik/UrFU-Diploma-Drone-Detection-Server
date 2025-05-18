@@ -91,7 +91,7 @@ class YOLOv8DroneDetectionWithTracker(IDroneDetection):
         return self._tracker_history[track_id]
 
     def get_drone_bbox(self, frame: FrameType) -> list[DroneBoxDTO]:
-        result = self._model.track(frame, persist=True, tracker=self._trakcer_yaml)[0]
+        result = self._model.track(frame, persist=True, tracker=self._trakcer_yaml, verbose=False)[0]
 
         if not result.boxes or result.boxes.id is None:
             return []
