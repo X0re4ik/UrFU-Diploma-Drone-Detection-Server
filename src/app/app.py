@@ -1,5 +1,6 @@
 import logging
 import cv2
+import numpy as np
 
 from src.features.analyzer.services import VideoAnalyzer, save_plot_to_bytes
 
@@ -136,6 +137,18 @@ class DroneDetectionPipeline:
                     (0, 0, 255),
                     1,
                 )
+                if magic_box.traick_id:
+                    track = self._drone_detection.get_track_history(magic_box.traick_id)
+                    points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
+                    cv2.polylines(
+                        frame,
+                        np.array([points]), 
+                        isClosed=False,
+                        color=(0, 0, 255), 
+                        thickness=1, 
+                        lineType=cv2.LINE_8,
+                        shift=0
+                    )
 
             if self._cv2_show:
                 cv2.imshow("Video DroneDetection", frame)

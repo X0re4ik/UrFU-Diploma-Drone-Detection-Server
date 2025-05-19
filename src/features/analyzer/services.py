@@ -101,6 +101,10 @@ class VideoAnalyzer:
 
     def get_model(self) -> str | None:
         data = self.get_model_percent()
+        if not data:
+            return None
+        if data[2] < 10:
+            return None
         return data[0] if data else None
 
     def get_count_drones(self) -> int:

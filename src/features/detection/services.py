@@ -85,7 +85,7 @@ class YOLOv8DroneDetectionWithTracker(IDroneDetection):
 
         self._tracker_history = defaultdict(list)
 
-        self._max_tracker_detection = 20000
+        self._max_tracker_detection = 1000
 
     def get_track_history(self, track_id: int) -> list[tuple[float], tuple[float]]:
         return self._tracker_history[track_id]
