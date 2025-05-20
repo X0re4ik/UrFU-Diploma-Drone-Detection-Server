@@ -101,7 +101,7 @@ async def relay_message(message: Message):
     return await message.answer("📍 Координаты успешно обновлены")
 
 
-@dp.message(lambda msg: msg.video is not None)
+@dp.message(lambda msg: msg.video is not None or msg.animation is not None)
 async def detection_drone(message: Message):
     time_to_update = get_update_user_location().time_to_update_location(
         message.from_user.id,
@@ -109,8 +109,15 @@ async def detection_drone(message: Message):
 
     if time_to_update:
         return await _cmd_start(message)
+    
+    if message.video:
+        file_id = message.video.file_id
+    elif message.animation:
+        file_id = message.animation.file_id
+    else:
+        return await message.answer("Некоррктный формат сообщения!")
 
-    video_file = await user_bot.get_file(message.video.file_id)
+    video_file = await user_bot.get_file(file_id)
     video_bytes = await user_bot.download_file(video_file.file_path)
 
     latitude, longitude = get_update_user_location().get_location(message.from_user.id)
@@ -119,6 +126,9 @@ async def detection_drone(message: Message):
     file_name = id + ".mp4"
 
     _s3_create_adapter().upload_file("drones", f"rows/{file_name}", video_bytes)
+    
+    await message.answer(f"Зарегестрирован инцидент: `{id}` 📸\nСпасибо за бдительность 🙏.")
+    
     result = pipeline.detect(id)
     video_name, video_bytes = _s3_create_adapter().download_file_bytes(
         "drones", result.detection_video_url

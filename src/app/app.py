@@ -60,6 +60,8 @@ class DroneDetectionPipeline:
         path_to_file: str = self._load_video.download(unique_id)
 
         cap = cv2.VideoCapture(path_to_file)
+        
+        self._statistics = VideoAnalyzer()
 
         if not cap.isOpened():
             raise Exception()
@@ -111,6 +113,8 @@ class DroneDetectionPipeline:
                         (255, 0, 0),
                         1,
                     )
+                    
+                    logger.info(drone_type_info.model_id)
 
                     drone_model_statistics = DroneModelStatisticsDTO(
                         drone_type_info.confidence, drone_type_info.model_id
